@@ -608,7 +608,9 @@ function renderChips(){
 
 function renderIntro(){
   const c = COPY[S.mode];
-  $('#intro-tag').textContent = c.tag;
+  const tagEl = $('#intro-tag');
+  tagEl.textContent = c.tag || '';
+  tagEl.hidden = !c.tag;   // 空のときは枠ごと隠す
   $('#intro-title').textContent = c.title;
   $('#intro-lead').innerHTML = c.lead;
   input.placeholder = c.ph;

@@ -404,7 +404,7 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
       </div>
       <p class="whoami"><span>うまプロ COO</span><b>松村</b></p>
       <span class="tag" id="intro-tag" hidden></span>
-      <h1 id="intro-title">で、どうした。話してみ。</h1>
+      <h1 id="intro-title">大丈夫、全部うまくいく。</h1>
       <p class="lead" id="intro-lead">仕事のこと、将来のこと、今日しんどかったこと。<br>質問でも相談でも、自由に書いてくれ。<br>ここでの話は誰にも見られへん。</p>
       <div class="chips" id="chips"></div>
     </div>
@@ -523,6 +523,7 @@ function directRequest(){
       stream:true,
       output_config:{ effort:'low' },
       mode:S.mode,   // どのタブからの相談か（中継サーバが統計用に見るだけで、AIには渡らない）
+      kind:kindOf(S.history.find(m => m.role === 'user')?.content || ''),   // 同上（用意した質問か自由記述か）
       system:[{ type:'text', text:buildSystemDirect(), cache_control:{ type:'ephemeral' } }],
       messages:S.history.slice(-20).map(m => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
@@ -644,7 +645,7 @@ const CHIPS = {
 const COPY = {
   chat: {
     tag:'',
-    title:'で、どうした。話してみ。',
+    title:'大丈夫、全部うまくいく。',
     lead:'仕事のこと、将来のこと、今日しんどかったこと。<br>質問でも相談でも、自由に書いてくれ。<br>ここでの話は誰にも見られへん。',
     ph:'自由に書いてOK。質問でも相談でも。',
   },
@@ -718,7 +719,11 @@ function tidy(t){ return t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'); 
         （端数を持ち越すので、1文字ずつ滑らかに進む）
      3) スクロールは毎フレーム呼ばない。最下部にいる時だけ間引いて動かす
         （毎フレーム呼ぶと画面が細かく揺れて、これが一番カクついて見える） */
-function typewriter(bubble){
+/* steady: 本文が最初から手元にある場合（作り置き回答）に使う。
+   通常はAIから届くのが遅れた分だけ速度を上げて追いつくが、
+   全文が最初からあると「遅れ」が最大になり一気に流れてしまう。
+   steady なら常に BASE の速さで出るので、AIの回答と見え方が揃う。 */
+function typewriter(bubble, { steady = false } = {}){
   /* 表示の速さ。数字を小さくするほどゆっくりになる（毎秒の文字数）
      BASE  … 遅れがない時の速さ
      ACCEL … 遅れ1文字あたり、どれだけ速度を足すか
@@ -743,7 +748,7 @@ function typewriter(bubble){
     } else if (shown < target.length) {
       const behind = target.length - shown;
       // 遅れているほど速く。段差を作らず連続的に上げる
-      const cps = Math.min(BASE + behind * ACCEL, done ? MAX_END : MAX);
+      const cps = steady ? BASE : Math.min(BASE + behind * ACCEL, done ? MAX_END : MAX);
       carry += cps * dt;
       const step = Math.floor(carry);
       if (step > 0) { carry -= step; shown = Math.min(target.length, shown + step); }
@@ -788,6 +793,36 @@ function dropLastMine(){
   if (mine) mine.remove();
 }
 
+/* ══ 用意した質問の作り置き回答 ══════════════════════════════
+   チップは文面が決まっているので、押されるたびにAIを呼ばなくても
+   作り置きしておいた回答で足りる。待ち時間ゼロ・API費用ゼロになる。
+   毎回同じ文にならないよう、1問につき数パターンからランダムで選ぶ。
+   （自由記述と、作り置き回答のあとの追加質問は、今までどおりAIが答える） */
+/* 用意した質問（チップ）そのものか、自由記述か。集計の内訳に使う */
+function kindOf(text){
+  return (CHIPS[S.mode] || []).includes(text) ? 'chip' : 'free';
+}
+
+function cannedFor(text){
+  const bank = window.CANNED;
+  // 1件目（＝いま押した質問だけ）の時にしか使わない。
+  // 会話の途中は文脈があるので、必ずAIに答えさせる。
+  if (!bank || S.history.length !== 1) return null;
+  const list = bank[S.mode + ' ' + text];
+  if (!Array.isArray(list) || !list.length) return null;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+/* 作り置きで返した相談も、集計には残す（AIを通らないので画面から送る） */
+function logAsk(text, kind){
+  if (!RELAY || !S.key) return;
+  fetch(RELAY.replace(/\/$/, '') + '/log', {
+    method:'POST',
+    headers:{ 'content-type':'application/json', 'x-access-code':S.key },
+    body: JSON.stringify({ mode:S.mode, kind, text }),
+  }).catch(() => {});   // 記録に失敗しても相談は止めない
+}
+
 /* ══ 送信 ══════════════════════════════════════════════════ */
 async function send(text){
   if (S.busy) return;
@@ -798,6 +833,24 @@ async function send(text){
   if (HANDOFF.some(w => text.includes(w))) {
     addRaw(CONTACTS);
     S.history.pop();
+    return;
+  }
+
+  const ready = cannedFor(text);
+  if (ready) {
+    // 作り置きでも合言葉は通す（AIを呼ぶときと入口を揃える）
+    if (RELAY && !S.key) {
+      S.history.pop(); dropLastMine();
+      if (window.showGate) { S.pending = text; window.showGate(); }
+      return;
+    }
+    S.busy = true; sendBtn.disabled = true;
+    const bubble = addMessage('matsumura', '');
+    const tw = typewriter(bubble, { steady:true });
+    await tw.finish(ready);
+    S.history.push({ role:'assistant', content:ready });
+    logAsk(text, 'chip');
+    S.busy = false; resize();
     return;
   }
 

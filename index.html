@@ -774,6 +774,14 @@ function resize(){
   sendBtn.disabled = S.busy || !input.value.trim();
 }
 
+/* 直前に出した「自分の吹き出し」を消す。
+   合言葉を挟んで送り直すとき、同じ質問が2つ並ばないようにするため。
+   （:last-of-type はタグ名基準なのでクラス指定では効かない） */
+function dropLastMine(){
+  const mine = [...log.querySelectorAll('.msg.me')].pop();
+  if (mine) mine.remove();
+}
+
 /* ══ 送信 ══════════════════════════════════════════════════ */
 async function send(text){
   if (S.busy) return;
@@ -798,9 +806,7 @@ async function send(text){
     let res;
     if (DIRECT) {
       if (!S.key) {
-        wrap.remove(); S.history.pop();
-        const mine = log.querySelector('.msg.me:last-of-type');
-        if (mine) mine.remove();
+        wrap.remove(); S.history.pop(); dropLastMine();
         if (RELAY && window.showGate) { S.pending = text; window.showGate(); }
         else addRaw(errorCard(400, { error:'no_api_key' }));
         return;
@@ -821,11 +827,12 @@ async function send(text){
       if (RELAY && info.error === 'bad_code') {
         // 合言葉が変更された等。保存を消して、もう一度ロック画面へ
         S.key = ''; localStorage.removeItem('pocket_key');
+        S.history.pop(); dropLastMine();   // 送り直すので、いま出した自分の吹き出しは消す
         S.pending = text;
         if (window.showGate) window.showGate();
-      } else {
-        addRaw(errorCard(res.status, info));
+        return;
       }
+      addRaw(errorCard(res.status, info));
       S.history.pop();
       return;
     }

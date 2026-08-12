@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>鉄板相談室 — うまプロ</title>
+<title>松村相談役 — うまプロ</title>
 <link rel="preload" as="image" href="img/matsumura-256.jpg">
 <style>
 /* ══ トークン ══════════════════════════════════════════════
@@ -320,6 +320,49 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
 .dlg .row button{flex:1; padding:11px; border-radius:10px; background:var(--surface-2); font-weight:600}
 .dlg .row button.primary{background:var(--brand); color:#fff}
 .status{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-2); margin-top:18px}
+
+/* ══ 集計画面（管理用） ═════════════════════════════════════ */
+#stats{position:fixed; inset:0; z-index:60; background:var(--paper); overflow:auto}
+#stats[hidden]{display:none}
+.statwrap{max-width:760px; margin:0 auto; padding:18px 18px 60px}
+.stathead{
+  position:sticky; top:0; background:var(--paper); padding:10px 0 12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  border-bottom:1px solid var(--line); margin-bottom:18px;
+}
+.stathead h2{font-size:17px; font-weight:800; margin:0}
+.stathead button{
+  border:1px solid var(--line); border-radius:9px; padding:7px 14px;
+  font-size:13px; font-weight:700; color:var(--ink-2); background:var(--surface);
+}
+.statnums{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px}
+.statnum{
+  flex:1 1 120px; background:var(--surface); border:1px solid var(--line);
+  border-radius:12px; padding:12px 14px;
+}
+.statnum b{display:block; font-size:22px; font-weight:800; line-height:1.2; font-variant-numeric:tabular-nums}
+.statnum span{display:block; font-size:11px; color:var(--ink-3); font-weight:700; margin-top:2px}
+#stats h3{
+  font-size:13px; font-weight:800; color:var(--brand-deep); margin:26px 0 10px;
+  border-left:4px solid var(--brand); padding-left:9px;
+}
+.bar{display:flex; align-items:center; gap:9px; padding:5px 0; font-size:13px}
+.bar .t{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bar .g{flex:0 0 90px; height:7px; background:var(--surface-2); border-radius:4px; overflow:hidden}
+.bar .g i{display:block; height:100%; background:var(--brand); border-radius:4px}
+.bar .n{flex:0 0 34px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums}
+.freelist{display:flex; flex-direction:column; gap:8px}
+.freeitem{
+  background:var(--surface); border:1px solid var(--line); border-radius:11px;
+  padding:10px 13px; font-size:13.5px; line-height:1.7;
+}
+.freeitem time{display:block; font-size:10.5px; color:var(--ink-3); font-weight:700; margin-bottom:3px}
+.statfoot{margin-top:26px; display:flex; gap:10px}
+.statfoot button{
+  border:1px solid var(--line); border-radius:9px; padding:9px 16px;
+  font-size:13px; font-weight:700; background:var(--surface); color:var(--ink-2);
+}
+.statempty{color:var(--ink-3); font-size:13px; padding:10px 0}
 .dot{width:8px; height:8px; border-radius:50%; background:var(--ink-3); flex:none}
 .dot.ok{background:#2E9E6B}
 .dot.ng{background:var(--brand)}
@@ -330,7 +373,7 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
 <div class="app">
   <header>
     <div class="bar">
-      <button class="mark" id="btn-home" type="button" aria-label="最初の画面に戻る"><em>鉄板</em>相談室</button>
+      <button class="mark" id="btn-home" type="button" aria-label="最初の画面に戻る"><em>松村</em>相談役</button>
       <span class="brandline">うまプロ<span>外食王に、俺はなる</span></span>
       <span class="spacer"></span>
       <button class="iconbtn" id="btn-home2" aria-label="最初の画面に戻る" title="最初に戻る">
@@ -382,7 +425,7 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
 <!-- 初回だけ表示する合言葉画面（中継サーバ版のみ）。一度通れば端末に保存され、二度と出ない -->
 <div id="gate" hidden>
   <div class="gatecard">
-    <span class="gmark"><em>鉄板</em>相談室</span>
+    <span class="gmark"><em>松村</em>相談役</span>
     <p class="glead">はじめて開く端末では、合言葉が必要です。<br>一度入れれば、次からは何も聞かれません。</p>
     <form id="gate-form">
       <input id="gate-code" type="text" placeholder="合言葉" autocomplete="off" autocapitalize="none" spellcheck="false">
@@ -394,12 +437,23 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
 
 <dialog id="dlg">
   <div class="dlg">
-    <h2>設定</h2>
-    <p class="lead">試作版。APIキーはこのブラウザにだけ保存され、外部には送られません。</p>
-    <label for="key">Anthropic APIキー</label>
-    <input id="key" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-    <p class="hint">サーバ側の環境変数 <code>ANTHROPIC_API_KEY</code> が設定されていれば、ここは空のままで構いません。</p>
-    <div class="status"><span class="dot" id="dot"></span><span id="status-text">確認中…</span></div>
+    <div id="dlg-api">
+      <h2>設定</h2>
+      <p class="lead">試作版。APIキーはこのブラウザにだけ保存され、外部には送られません。</p>
+      <label for="key">Anthropic APIキー</label>
+      <input id="key" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+      <p class="hint">サーバ側の環境変数 <code>ANTHROPIC_API_KEY</code> が設定されていれば、ここは空のままで構いません。</p>
+      <div class="status"><span class="dot" id="dot"></span><span id="status-text">確認中…</span></div>
+    </div>
+
+    <div id="dlg-admin" hidden>
+      <h2>管理</h2>
+      <p class="lead">管理キーを入れると、どんな相談が多いかの集計を表示します。</p>
+      <label for="admin-key">管理キー</label>
+      <input id="admin-key" type="password" placeholder="管理キー" autocomplete="off" spellcheck="false">
+      <p class="hint" id="admin-err" hidden>管理キーが違うようです。</p>
+    </div>
+
     <div class="row">
       <button type="button" id="dlg-close">閉じる</button>
       <button type="button" class="primary" id="dlg-save">保存</button>
@@ -407,7 +461,18 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
   </div>
 </dialog>
 
-<script src="prompts.js?v=cefc08199d"></script>
+<!-- 集計画面 -->
+<div id="stats" hidden>
+  <div class="statwrap">
+    <div class="stathead">
+      <h2>相談の集計</h2>
+      <button type="button" id="stats-close" aria-label="閉じる">閉じる</button>
+    </div>
+    <div id="stats-body"></div>
+  </div>
+</div>
+
+<script src="prompts.js?v=a36dd909f8"></script>
 <script>
 /* ══ 状態 ══════════════════════════════════════════════════ */
 const S = {
@@ -457,6 +522,7 @@ function directRequest(){
       max_tokens:4000,
       stream:true,
       output_config:{ effort:'low' },
+      mode:S.mode,   // どのタブからの相談か（中継サーバが統計用に見るだけで、AIには渡らない）
       system:[{ type:'text', text:buildSystemDirect(), cache_control:{ type:'ephemeral' } }],
       messages:S.history.slice(-20).map(m => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
@@ -1036,8 +1102,10 @@ input.addEventListener('keydown', (e) => {
 
 const dlg = $('#dlg');
 if (DIRECT && RELAY) {
-  // 中継サーバ版: 合言葉は初回のロック画面だけで入れる。設定（歯車）は出さない
-  $('#btn-settings').style.display = 'none';
+  // 中継サーバ版: 相談用の合言葉は初回のロック画面だけ。
+  // 歯車は「管理」用として残し、管理キーを入れると集計を表示する。
+  $('#dlg-api').hidden = true;
+  $('#dlg-admin').hidden = false;
   const gate = $('#gate');
   const showGate = () => {
     gate.hidden = false;
@@ -1073,13 +1141,91 @@ if (DIRECT && RELAY) {
     }
   });
 }
-$('#btn-settings').addEventListener('click', () => { $('#key').value = S.key; dlg.showModal(); checkHealth(); });
-$('#dlg-close').addEventListener('click', () => dlg.close());
-$('#dlg-save').addEventListener('click', () => {
-  S.key = $('#key').value.trim();
-  if (S.key) localStorage.setItem('pocket_key', S.key); else localStorage.removeItem('pocket_key');
-  dlg.close();
+const ADMIN_MODE = Boolean(DIRECT && RELAY);
+$('#btn-settings').addEventListener('click', () => {
+  if (ADMIN_MODE) {
+    $('#admin-key').value = '';
+    $('#admin-err').hidden = true;
+    $('#dlg-save').textContent = '表示';
+    dlg.showModal();
+    setTimeout(() => $('#admin-key').focus(), 60);
+  } else {
+    $('#key').value = S.key; dlg.showModal(); checkHealth();
+  }
 });
+$('#dlg-close').addEventListener('click', () => dlg.close());
+$('#dlg-save').addEventListener('click', async () => {
+  if (!ADMIN_MODE) {
+    S.key = $('#key').value.trim();
+    if (S.key) localStorage.setItem('pocket_key', S.key); else localStorage.removeItem('pocket_key');
+    dlg.close();
+    return;
+  }
+  const code = $('#admin-key').value.trim();
+  if (!code) return;
+  const btn = $('#dlg-save');
+  btn.disabled = true; btn.textContent = '確認中…';
+  try {
+    const r = await fetch(RELAY + '/stats', { method:'POST', headers:{ 'x-admin-code': code } });
+    if (!r.ok) { $('#admin-err').textContent = '管理キーが違うようです。'; $('#admin-err').hidden = false; return; }
+    const data = await r.json();
+    dlg.close();
+    renderStats(data);
+  } catch {
+    $('#admin-err').textContent = '通信できませんでした。'; $('#admin-err').hidden = false;
+  } finally {
+    btn.disabled = false; btn.textContent = '表示';
+  }
+});
+
+/* ══ 集計の描画 ═══════════════════════════════════════════ */
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+function renderStats(d){
+  const free = d.free || [], chips = d.topChips || [], days = d.byDay || [];
+  const freeCount = (d.byMode || []).filter(m => m.kind === 'free').reduce((a, m) => a + m.n, 0);
+  const chipCount = (d.byMode || []).filter(m => m.kind === 'chip').reduce((a, m) => a + m.n, 0);
+  const maxChip = chips.length ? chips[0].n : 1;
+  const maxDay  = days.length ? Math.max(...days.map(x => x.n)) : 1;
+
+  const bars = (rows, max, label) => rows.length
+    ? rows.map(r => `<div class="bar"><span class="t">${esc(label(r))}</span>` +
+        `<span class="g"><i style="width:${Math.round(r.n / max * 100)}%"></i></span>` +
+        `<span class="n">${r.n}</span></div>`).join('')
+    : '<p class="statempty">まだデータがありません。</p>';
+
+  $('#stats-body').innerHTML =
+    `<div class="statnums">
+       <div class="statnum"><b>${d.total || 0}</b><span>相談の総数</span></div>
+       <div class="statnum"><b>${freeCount}</b><span>自由記述</span></div>
+       <div class="statnum"><b>${chipCount}</b><span>用意した質問</span></div>
+     </div>` +
+    `<h3>よく押された質問</h3>${bars(chips, maxChip, r => r.text)}` +
+    `<h3>日別の利用数</h3>${bars(days, maxDay, r => r.day)}` +
+    `<h3>自由に書かれた相談（新しい順・最大300件）</h3>` +
+    (free.length
+      ? `<div class="freelist">` + free.map(f =>
+          `<div class="freeitem"><time>${esc(f.day)}${f.mode === 'praise' ? '｜ほめてもらう' : ''}</time>${esc(f.text)}</div>`
+        ).join('') + `</div>`
+      : '<p class="statempty">まだありません。</p>') +
+    `<div class="statfoot"><button type="button" id="stats-csv">CSVで書き出す</button></div>`;
+
+  $('#stats').hidden = false;
+  window.scrollTo({ top: 0 });
+
+  $('#stats-csv').addEventListener('click', () => {
+    const rows = [['日付','種別','モード','内容']].concat(
+      free.map(f => [f.day, '自由記述', f.mode, f.text]),
+      chips.map(c => ['', '用意した質問（' + c.n + '件）', '', c.text]),
+    );
+    const csv = '\uFEFF' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+    a.download = '松村相談役_集計.csv';
+    a.click();
+  });
+}
+$('#stats-close').addEventListener('click', () => { $('#stats').hidden = true; });
 
 async function checkHealth(){
   const dot = $('#dot'), txt = $('#status-text');

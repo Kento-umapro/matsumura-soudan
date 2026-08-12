@@ -719,6 +719,12 @@ function tidy(t){ return t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'); 
      3) スクロールは毎フレーム呼ばない。最下部にいる時だけ間引いて動かす
         （毎フレーム呼ぶと画面が細かく揺れて、これが一番カクついて見える） */
 function typewriter(bubble){
+  /* 表示の速さ。数字を小さくするほどゆっくりになる（毎秒の文字数）
+     BASE  … 遅れがない時の速さ
+     ACCEL … 遅れ1文字あたり、どれだけ速度を足すか
+     MAX   … 通信中の上限 / MAX_END … 受信し終わったあとの上限 */
+  const BASE = 38, ACCEL = 2, MAX = 150, MAX_END = 320;
+
   let target = '', shown = 0, done = false, resolveDone = null;
   let raf = 0, last = 0, carry = 0, lastScroll = 0;
 
@@ -737,7 +743,7 @@ function typewriter(bubble){
     } else if (shown < target.length) {
       const behind = target.length - shown;
       // 遅れているほど速く。段差を作らず連続的に上げる
-      const cps = Math.min(70 + behind * 6, done ? 900 : 460);
+      const cps = Math.min(BASE + behind * ACCEL, done ? MAX_END : MAX);
       carry += cps * dt;
       const step = Math.floor(carry);
       if (step > 0) { carry -= step; shown = Math.min(target.length, shown + step); }

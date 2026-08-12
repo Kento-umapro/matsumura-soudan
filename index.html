@@ -723,7 +723,7 @@ function typewriter(bubble){
      BASE  … 遅れがない時の速さ
      ACCEL … 遅れ1文字あたり、どれだけ速度を足すか
      MAX   … 通信中の上限 / MAX_END … 受信し終わったあとの上限 */
-  const BASE = 38, ACCEL = 2, MAX = 150, MAX_END = 320;
+  const BASE = 30, ACCEL = 1.2, MAX = 95, MAX_END = 220;
 
   let target = '', shown = 0, done = false, resolveDone = null;
   let raf = 0, last = 0, carry = 0, lastScroll = 0;

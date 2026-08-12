@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>鉄板相談室 — うまプロ</title>
+<link rel="preload" as="image" href="img/matsumura-256.jpg">
+<style>
+/* ══ トークン ══════════════════════════════════════════════
+   配色は umapro-jp.com から採取（赤 #D83020 / 濃赤 #B62614 /
+   黄 #F5C518 / クリーム #EFE7D5 / 墨 #161310）。
+   鉄板の黒×炎の赤×うまプロの黄で「鉄板相談室」を表現する。 */
+:root{
+  color-scheme:light;
+  --brand:#D83020;
+  --brand-deep:#B62614;
+  --brand-wash:rgba(216,48,32,.08);
+  --paper:#F7F1E2;
+  --surface:#FFFDF7;
+  --surface-2:#EFE7D5;
+  --ink:#161310;
+  --ink-2:#5C534A;
+  --ink-3:#9B9084;
+  --line:#E2D8C2;
+  --kaicho:#B62614;
+  --kaicho-bg:#FBEDE6;
+  --shacho:#8A6A00;
+  --shacho-bg:#FCF3D8;
+  --alert:#8A6A00;
+  --alert-bg:#FCF3D8;
+  --shadow:0 1px 2px rgba(80,30,25,.07), 0 10px 30px rgba(80,30,25,.06);
+  --sans:"ヒラギノ角ゴ Pro","Hiragino Kaku Gothic Pro","Hiragino Sans","Yu Gothic",YuGothic,メイリオ,Meiryo,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --brand:#FF5A45;
+    --brand-deep:#FF8371;
+    --brand-wash:rgba(255,90,69,.13);
+    --paper:#151210;
+    --surface:#1F1A16;
+    --surface-2:#2A241E;
+    --ink:#F2ECE0;
+    --ink-2:#BCB0A0;
+    --ink-3:#8C8172;
+    --line:#372F26;
+    --kaicho:#FF7461;
+    --kaicho-bg:#33201C;
+    --shacho:#F5C518;
+    --shacho-bg:#2E2612;
+    --alert:#F5C518;
+    --alert-bg:#2E2612;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --brand:#FF5A45; --brand-deep:#FF8371; --brand-wash:rgba(255,90,69,.13);
+  --paper:#151210; --surface:#1F1A16; --surface-2:#2A241E;
+  --ink:#F2ECE0; --ink-2:#BCB0A0; --ink-3:#8C8172; --line:#372F26;
+  --kaicho:#FF7461; --kaicho-bg:#33201C;
+  --shacho:#F5C518; --shacho-bg:#2E2612;
+  --alert:#F5C518; --alert-bg:#2E2612;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+/* 横スクロールを完全に殺す（iPhoneでキーボード開閉時に横へずれるのを防ぐ） */
+html,body{overflow-x:hidden; max-width:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.75;
+  -webkit-font-smoothing:antialiased; text-size-adjust:100%;
+  overscroll-behavior-x:none;
+}
+button{font:inherit; color:inherit; cursor:pointer; border:none; background:none}
+img{display:block; max-width:100%}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px; border-radius:8px}
+
+.app{
+  max-width:760px; margin:0 auto; min-height:100dvh;
+  display:flex; flex-direction:column; background:var(--surface);
+  box-shadow:0 0 0 1px var(--line);
+}
+
+/* ══ ヘッダー ══════════════════════════════════════════════ */
+header{position:sticky; top:0; z-index:20; background:var(--surface); border-bottom:1px solid var(--line)}
+.bar{display:flex; align-items:center; gap:11px; padding:13px 18px 11px}
+.mark{
+  font-size:19px; font-weight:800; letter-spacing:-.02em; line-height:1;
+  color:var(--ink);
+  background:none; border:0; padding:0; font-family:inherit; cursor:pointer;
+}
+.mark:hover em{text-decoration:underline}
+.mark{white-space:nowrap}
+@media (max-width:430px){ .mark{font-size:17px} .brandline{font-size:9px} }
+.mark em{font-style:normal; color:var(--brand)}
+.brandline{
+  font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--brand);
+  border-left:1px solid var(--line); padding-left:11px; line-height:1.3;
+}
+.brandline span{display:block; font-size:8.5px; font-weight:600; color:var(--ink-3); letter-spacing:.06em}
+.bar .spacer{flex:1}
+.iconbtn{
+  width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
+  color:var(--ink-2); border:1px solid var(--line);
+}
+.iconbtn:hover{background:var(--surface-2); color:var(--brand)}
+
+/* 話す相手 */
+.modes{display:flex; gap:24px; padding:0 18px; border-top:1px solid var(--line)}
+.mode{
+  padding:11px 0 9px; font-size:13.5px; font-weight:700; color:var(--ink-3);
+  border-bottom:2.5px solid transparent; margin-bottom:-1px;
+}
+.mode[aria-selected="true"]{color:var(--brand); border-bottom-color:var(--brand)}
+/* 松村さんの言葉: AI相談とは別要素なので右に離し、金色のグラデーション文字に */
+.mode[data-mode="kotoba"]{
+  margin-left:auto;
+  background:linear-gradient(120deg, #A67C00 0%, #E6B422 35%, #FFE28A 52%, #D4AF37 70%, #8C6D1F 100%);
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+}
+.mode[data-mode="kotoba"][aria-selected="true"]{border-bottom-color:#D4AF37}
+
+/* ══ 会話 ══════════════════════════════════════════════════ */
+main{flex:1; padding:22px 18px 10px; display:flex; flex-direction:column; gap:18px}
+
+.intro{text-align:center; padding:22px 4px 6px}
+.intro .avs{display:flex; justify-content:center; margin-bottom:18px}
+.intro .avs .ring{
+  width:92px; height:92px; border-radius:50%; background:#fff; overflow:hidden;
+  box-shadow:0 0 0 3px var(--surface), 0 6px 18px rgba(80,30,25,.12);
+  flex:none; position:relative;
+}
+.intro .avs .ring video,
+.intro .avs .ring img{
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.intro h1{
+  font-size:22px; font-weight:800; letter-spacing:-.01em; margin:0 0 10px;
+  color:var(--ink); text-wrap:balance;
+}
+.intro .lead{margin:0 auto; font-size:13.5px; color:var(--ink-2); max-width:30em}
+.intro .tag{
+  display:inline-block; margin-bottom:14px; font-size:10.5px; font-weight:700;
+  letter-spacing:.09em; color:var(--brand-deep);
+  background:var(--brand-wash); border-radius:999px; padding:4px 13px;
+}
+/* 1行に1つずつ縦に並べる。入れ替えボタンは右上に縦書きで固定 */
+.chips{
+  display:flex; flex-direction:column; align-items:center; gap:7px; margin-top:22px;
+  position:relative; padding:0 46px;
+}
+.chip{
+  background:var(--brand-wash); color:var(--brand-deep); border-radius:999px;
+  padding:7px 15px; font-size:12.5px; font-weight:600; transition:.13s;
+  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.chip:hover{background:var(--brand); color:#fff}
+.chip.reroll{
+  position:absolute; top:0; right:2px;
+  writing-mode:vertical-rl;
+  background:transparent; border:1.5px dashed var(--brand); color:var(--brand);
+  font-weight:700; font-size:11px; letter-spacing:.14em;
+  padding:13px 6px; white-space:nowrap; overflow:visible; text-overflow:clip;
+}
+.chip.reroll:hover{background:var(--brand-wash); color:var(--brand-deep)}
+
+/* ══ 松村さんの言葉 ═══════════════════════════════════════ */
+.kotoba{padding:4px 0 20px}
+.kotoba .khead{text-align:center; margin:14px 0 26px}
+.kotoba .khead h1{font-size:20px; font-weight:800; margin:0 0 6px; color:var(--ink)}
+.kotoba .khead p{font-size:12.5px; color:var(--ink-3); margin:0}
+.kotoba section{margin-bottom:28px}
+.kotoba h2{
+  font-size:13px; font-weight:800; color:var(--brand-deep);
+  border-left:4px solid var(--brand); padding-left:10px; margin:0 0 12px;
+}
+.kcard{
+  background:var(--surface-2); border-radius:14px; padding:13px 16px; margin-bottom:9px;
+}
+.kcard summary{
+  list-style:none; cursor:pointer; font-size:14px; font-weight:700; color:var(--ink);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.kcard summary::-webkit-details-marker{display:none}
+.kcard summary::after{content:'＋'; color:var(--brand); font-weight:700; flex:none}
+.kcard[open] summary::after{content:'−'}
+.kcard p{font-size:13.5px; line-height:1.85; color:var(--ink-2); margin:10px 0 0}
+.kcard .ksrc{
+  display:inline-block; margin-top:7px; font-size:10px; font-weight:700;
+  color:var(--brand-deep); background:var(--brand-wash); border-radius:999px; padding:2px 9px;
+}
+
+.msg{display:flex; gap:10px; align-items:flex-start}
+.msg.me{flex-direction:row-reverse}
+.msg .av{width:38px; height:38px; border-radius:50%; flex:none; margin-top:20px; background:#fff; box-shadow:0 0 0 1.5px var(--line)}
+.msg.matsumura .av{box-shadow:0 0 0 1.5px var(--brand)}
+.body{min-width:0; max-width:min(86%,32em)}
+.who{font-size:11px; font-weight:700; letter-spacing:.03em; margin:0 0 4px 3px}
+.msg.matsumura .who{color:var(--brand-deep)}
+.bubble{
+  padding:12px 16px; border-radius:16px; font-size:15px;
+  white-space:pre-wrap; word-break:break-word; line-height:1.7;
+}
+.msg.me .bubble{background:var(--surface-2); border-bottom-right-radius:5px}
+.msg.matsumura .bubble{background:var(--surface); border-bottom-left-radius:5px; box-shadow:inset 0 0 0 1px var(--line)}
+.msg.me .body{margin-top:20px}
+
+.dots span{
+  display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%;
+  background:currentColor; opacity:.35; animation:blink 1.3s infinite;
+}
+.dots span:nth-child(2){animation-delay:.18s}
+.dots span:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,60%,100%{opacity:.22} 30%{opacity:.8}}
+@media (prefers-reduced-motion:reduce){ .dots span{animation:none} }
+
+.handoff{
+  border:1px solid color-mix(in srgb, var(--alert) 32%, var(--line));
+  background:var(--alert-bg); border-radius:16px; padding:16px 18px;
+}
+.handoff h3{margin:0 0 8px; font-size:14px; font-weight:700; color:var(--alert)}
+.handoff p{margin:0 0 12px; font-size:13.5px; color:var(--ink-2)}
+.handoff dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13px}
+.handoff dt{color:var(--ink-3); white-space:nowrap}
+.handoff dd{margin:0; font-variant-numeric:tabular-nums; font-weight:600}
+
+.error{
+  border:1px solid var(--line); background:var(--surface-2); border-radius:16px;
+  padding:14px 17px; font-size:13.5px; color:var(--ink-2);
+}
+.error code{font-size:11.5px; background:var(--paper); padding:1px 6px; border-radius:5px; word-break:break-all}
+
+/* ══ 入力 ══════════════════════════════════════════════════ */
+footer{
+  position:sticky; bottom:0; background:var(--surface); border-top:1px solid var(--line);
+  padding:11px 18px calc(9px + env(safe-area-inset-bottom));
+}
+.composer{display:flex; gap:9px; align-items:flex-end}
+textarea{
+  /* 16px未満だとiPhoneがフォーカス時に自動ズームして画面が横にずれる */
+  flex:1; resize:none; font:inherit; font-size:16px; color:var(--ink);
+  background:var(--surface-2); border:1.5px solid transparent; border-radius:22px;
+  padding:11px 16px; max-height:140px; min-height:46px; line-height:1.6;
+  transition:border-color .15s;
+}
+textarea:focus{outline:none; border-color:var(--brand)}
+textarea::placeholder{color:var(--ink-3)}
+.send{
+  width:46px; height:46px; flex:none; border-radius:50%;
+  background:var(--brand); color:#fff; display:grid; place-items:center;
+  transition:.15s;
+}
+.send:hover:not(:disabled){background:var(--brand-deep)}
+.send:disabled{opacity:.28; cursor:default}
+.note{
+  font-size:10px; color:var(--ink-3); text-align:center; margin:9px 0 0; line-height:1.6;
+}
+.note b{color:var(--brand); font-weight:800; letter-spacing:.06em}
+
+/* ══ 合言葉画面（初回のみ） ══════════════════════════════════ */
+#gate{
+  position:fixed; inset:0; z-index:100; background:var(--paper);
+  display:flex; align-items:center; justify-content:center; padding:24px;
+}
+#gate[hidden]{display:none}
+.gatecard{
+  background:var(--surface); border-radius:20px; box-shadow:var(--shadow);
+  padding:34px 28px; max-width:360px; width:100%; text-align:center;
+}
+.gatecard .gmark{font-size:22px; font-weight:800; letter-spacing:-.02em}
+.gatecard .gmark em{font-style:normal; color:var(--brand)}
+.gatecard .glead{font-size:12.5px; color:var(--ink-2); margin:12px 0 20px; line-height:1.8}
+.gatecard input{
+  width:100%; font:inherit; font-size:16px; text-align:center; letter-spacing:.08em;
+  padding:11px 14px; border-radius:12px; border:1.5px solid var(--line);
+  background:var(--surface-2); color:var(--ink);
+}
+.gatecard input:focus{outline:none; border-color:var(--brand)}
+.gatecard button{
+  width:100%; margin-top:11px; padding:12px; border-radius:12px;
+  background:var(--brand); color:#fff; font-weight:700; font-size:14.5px;
+}
+.gatecard button:hover{background:var(--brand-deep)}
+.gatecard .gerr{font-size:12px; color:var(--brand); margin:12px 0 0; font-weight:600}
+
+/* ══ 設定 ══════════════════════════════════════════════════ */
+dialog{
+  border:none; border-radius:18px; padding:0; max-width:420px; width:calc(100% - 32px);
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow);
+}
+dialog::backdrop{background:rgba(40,10,8,.5)}
+.dlg{padding:24px}
+.dlg h2{margin:0 0 4px; font-size:16px; font-weight:800}
+.dlg .lead{margin:0 0 18px; font-size:12.5px; color:var(--ink-3)}
+.dlg label{display:block; font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:6px}
+.dlg input{
+  width:100%; font:inherit; font-size:16px; padding:10px 12px; border-radius:10px;
+  border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink);
+}
+.dlg input:focus{outline:none; border-color:var(--brand)}
+.dlg .hint{font-size:11.5px; color:var(--ink-3); margin:8px 0 0; line-height:1.65}
+.dlg .hint code{background:var(--surface-2); padding:1px 5px; border-radius:4px}
+.dlg .row{display:flex; gap:9px; margin-top:22px}
+.dlg .row button{flex:1; padding:11px; border-radius:10px; background:var(--surface-2); font-weight:600}
+.dlg .row button.primary{background:var(--brand); color:#fff}
+.status{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-2); margin-top:18px}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--ink-3); flex:none}
+.dot.ok{background:#2E9E6B}
+.dot.ng{background:var(--brand)}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="bar">
+      <button class="mark" id="btn-home" type="button" aria-label="最初の画面に戻る"><em>鉄板</em>相談室</button>
+      <span class="brandline">うまプロ<span>外食王に、俺はなる</span></span>
+      <span class="spacer"></span>
+      <button class="iconbtn" id="btn-home2" aria-label="最初の画面に戻る" title="最初に戻る">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>
+        </svg>
+      </button>
+      <button class="iconbtn" id="btn-settings" aria-label="設定">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modes" role="tablist">
+      <button class="mode" role="tab" data-mode="chat" aria-selected="true">相談する</button>
+      <button class="mode" role="tab" data-mode="praise" aria-selected="false">ほめてもらう</button>
+      <button class="mode" role="tab" data-mode="kotoba" aria-selected="false">松村さんの言葉</button>
+    </div>
+  </header>
+
+  <main id="log">
+    <div class="intro" id="intro">
+      <div class="avs">
+        <span class="ring"><img class="idle" src="img/matsumura-512.jpg" alt="松村COO"></span>
+      </div>
+      <span class="tag" id="intro-tag">外食王に、俺はなる</span>
+      <h1 id="intro-title">で、どうした。話してみ。</h1>
+      <p class="lead" id="intro-lead">仕事のこと、将来のこと、今日しんどかったこと。<br>なんでも書いてくれ。ここでの話は誰にも見られへん。</p>
+      <div class="chips" id="chips"></div>
+    </div>
+  </main>
+
+  <footer>
+    <form class="composer" id="form">
+      <textarea id="input" rows="1" placeholder="ここに書く" autocomplete="off"></textarea>
+      <button class="send" id="send" type="submit" aria-label="送信" disabled>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+      </button>
+    </form>
+    <p class="note"><b>外食王に、俺はなる。</b></p>
+  </footer>
+</div>
+
+<!-- 初回だけ表示する合言葉画面（中継サーバ版のみ）。一度通れば端末に保存され、二度と出ない -->
+<div id="gate" hidden>
+  <div class="gatecard">
+    <span class="gmark"><em>鉄板</em>相談室</span>
+    <p class="glead">はじめて開く端末では、合言葉が必要です。<br>一度入れれば、次からは何も聞かれません。</p>
+    <form id="gate-form">
+      <input id="gate-code" type="text" placeholder="合言葉" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <button type="submit" id="gate-go">はじめる</button>
+    </form>
+    <p class="gerr" id="gate-err" hidden>合言葉が違うようです。もう一度確かめてください。</p>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg">
+    <h2>設定</h2>
+    <p class="lead">試作版。APIキーはこのブラウザにだけ保存され、外部には送られません。</p>
+    <label for="key">Anthropic APIキー</label>
+    <input id="key" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+    <p class="hint">サーバ側の環境変数 <code>ANTHROPIC_API_KEY</code> が設定されていれば、ここは空のままで構いません。</p>
+    <div class="status"><span class="dot" id="dot"></span><span id="status-text">確認中…</span></div>
+    <div class="row">
+      <button type="button" id="dlg-close">閉じる</button>
+      <button type="button" class="primary" id="dlg-save">保存</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="prompts.js?v=eb9cea38fe"></script>
+<script>
+/* ══ 状態 ══════════════════════════════════════════════════ */
+const S = {
+  who: 'matsumura',
+  mode: 'chat',
+  busy: false,
+  history: [],
+  key: localStorage.getItem('pocket_key') || '',
+};
+
+const $ = (s) => document.querySelector(s);
+const log = $('#log'), intro = $('#intro'), input = $('#input'), sendBtn = $('#send');
+const AVATAR = { matsumura: 'img/matsumura-256.jpg' };
+const NAME = { matsumura: '松村COO' };
+
+/* ══ サーバ不要モード（GitHub Pages用） ══════════════════════
+   ビルド時に prompts.js（window.PROMPTS）が同梱されている場合、
+   ローカルサーバを経由せず、ブラウザから直接 Anthropic API を呼ぶ。
+   APIキーは右上の歯車から入力（このブラウザのみに保存）。       */
+const DIRECT = typeof window.PROMPTS === 'object' && window.PROMPTS !== null;
+/* 中継サーバ（Cloudflare Worker）が設定されていれば、APIキーの代わりに
+   合言葉（x-access-code）を送る。キーは中継サーバだけが持つ。 */
+const RELAY = (typeof window.RELAY_URL === 'string' && window.RELAY_URL) || '';
+
+function buildSystemDirect(){
+  const p = window.PROMPTS;
+  const parts = [p.common, p.knowledge, p.matsumura];
+  if (S.mode === 'praise') parts.push(p.praise);
+  return parts.join('\n\n---\n\n');
+}
+
+function directRequest(){
+  const headers = { 'content-type':'application/json' };
+  if (RELAY) {
+    headers['x-access-code'] = S.key;   // 合言葉。キーは中継サーバが持つ
+  } else {
+    headers['x-api-key'] = S.key;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+  return fetch(RELAY || 'https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers,
+    body: JSON.stringify({
+      model:'claude-opus-5',
+      max_tokens:4000,
+      stream:true,
+      output_config:{ effort:'low' },
+      system:[{ type:'text', text:buildSystemDirect(), cache_control:{ type:'ephemeral' } }],
+      messages:S.history.slice(-20).map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: String(m.content || '').slice(0, 4000),
+      })),
+    }),
+  });
+}
+
+/* ══ 相談窓口へ渡すべき言葉 ═══════════════════════════════════
+   ここに当たった場合、AIには一切送らず、相談先カードだけを出します。
+   運用に合わせて増減してください。                              */
+const HANDOFF = [
+  '死にたい','死のう','消えたい','いなくなりたい','自殺','自傷','リストカット','首を吊',
+  '生きていたくない','生きてる意味がない',
+  'パワハラ','セクハラ','モラハラ','いじめ','いじめられ','殴られ','蹴られ','暴力',
+  '脅され','怒鳴られ続け','無視され続け','体を触られ','セクシャル',
+  'うつ病','鬱病','心療内科','精神科','眠れない日が','パニック障害','過呼吸',
+  '闇金','取り立て','多重債務','自己破産','借金が返せ','給料が払われ','未払い',
+  '労働基準監督署','訴え','警察',
+];
+
+const CONTACTS = `
+<div class="handoff">
+  <h3>これは、人が直接聞くべき話です</h3>
+  <p>ここで俺が答える話やない。ちゃんと人に聞いてもらったほうがいい。一人で抱えるのが、いちばんよくない。</p>
+  <dl>
+    <dt>社内の相談窓口</dt><dd>（担当者名・連絡先を設定してください）</dd>
+    <dt>店長・エリアマネージャー</dt><dd>まずは直属の上長へ</dd>
+    <dt>こころの健康相談統一ダイヤル</dt><dd>0570-064-556</dd>
+    <dt>いのちの電話</dt><dd>0570-783-556（10:00〜22:00）</dd>
+    <dt>#いのちSOS</dt><dd>0120-061-338（24時間）</dd>
+  </dl>
+</div>`;
+
+/* ══ 例文・文言 ════════════════════════════════════════════ */
+/* 参考質問。ここから毎回ランダムに数個だけ表示する */
+const CHIPS = {
+  chat: [
+    'この仕事、意味あるのかなと思ってしまう',
+    'ピークがしんどくて心が折れそうです',
+    '店長に叱られてへこんでいます',
+    '今日ミスをして落ち込んでいます',
+    'お客様にクレームを言われて引きずっています',
+    'バイトを辞めようか迷っています',
+    '先輩に話しかけるのが怖いです',
+    '仕事が遅くて自分が嫌になります',
+    '「もっと考えて動け」と言われても何をすればいいか分かりません',
+    '自分に自信が持てません',
+    '同期と比べて焦ってしまいます',
+    '正社員になるか迷っています',
+    '将来やりたいことが見つかりません',
+    '報連相が苦手で、つい後回しにしてしまいます',
+    '言われたことしかできていない気がします',
+    '新人に教えるのが難しいです',
+    '後輩が動いてくれません',
+    'シフトが希望通りに入れなくて不満です',
+    '忙しいのに人が足りません',
+    '店の空気が悪い気がします',
+    'やる気が出ない日はどうすればいいですか',
+    '同じミスを何度もしてしまいます',
+    '注意したいけど嫌われるのが怖いです',
+    '自分の意見を言えません',
+    '仕事を任せてもらえません',
+    'やることが多すぎて何から手をつければいいか分かりません',
+    '評価されていない気がします',
+    '接客が向いていない気がします',
+    'キッチンとホールの連携がうまくいきません',
+    '朝起きるのがつらいです',
+    '学業とバイトの両立がきついです',
+    '敬語や言葉づかいに自信がありません',
+    '店長になりたいけど自信がありません',
+    'この会社で成長できるのか不安です',
+    '掃除や仕込みのモチベーションが上がりません',
+    '怒られるのが怖くて報告できませんでした',
+    '売上を上げろと言われても何をすればいいですか',
+    'お客様に喜んでもらう方法が分かりません',
+    '先輩によって言うことが違います',
+    'クレーム対応が怖いです',
+    '自分だけ仕事量が多い気がします',
+    'やる気のない人にどう接すればいいですか',
+    '緊張して声が出ません',
+    '仕事を覚えるのが遅いと言われます',
+    '将来のお金が不安です',
+    '人前で話すのが苦手です',
+    'ずっと同じ作業で飽きてきました',
+    '注意されると頭が真っ白になります',
+    '休みの日も仕事のことを考えてしまいます',
+    '自分の強みが分かりません',
+  ],
+  praise: [
+    'お客さんが言う前に水を持っていった',
+    'ピークで一人で回した',
+    '新人に教えるとき、理由から説明した',
+    'ミスをすぐ店長に報告した',
+    '閉店後、誰もいないのに床の油汚れを落とした',
+    '苦手な先輩に自分から挨拶した',
+    '後輩のシフトを代わってあげた',
+    'クレームを最後まで自分で対応した',
+    '言われる前に仕込みを終わらせた',
+    '忙しい日でも笑顔を保てた',
+    'お客様に「ありがとう」と言ってもらえた',
+    '雨の日も遅刻せずに出勤した',
+    '苦手だったレジ締めを一人でやり切った',
+    '常連さんの名前と好みを覚えた',
+    '気づいたゴミを自分で拾った',
+    '先輩に分からないことを素直に聞いた',
+    '体調が悪そうな仲間に声をかけた',
+    'テーブルの様子に気づいて先に動いた',
+    '注意されたことを次の日から直した',
+    '一番遅くまで残って片付けをした',
+    'お見送りを最後まで丁寧にやった',
+    '新しいメニューを自主的に覚えた',
+    '準備を前倒しで終わらせた',
+    'しんどい日に元気に挨拶した',
+  ],
+};
+
+
+const COPY = {
+  chat: {
+    tag:'外食王に、俺はなる',
+    title:'で、どうした。話してみ。',
+    lead:'仕事のこと、将来のこと、今日しんどかったこと。<br>なんでも書いてくれ。ここでの話は誰にも見られへん。',
+    ph:'ここに書く',
+  },
+  praise: {
+    tag:'今日の一皿',
+    title:'今日、何をやった？',
+    lead:'小さいことでええ。やったことを書いてくれたら、<br>それがどういう力なのか、名前をつけて返す。',
+    ph:'今日やったことを書く',
+  },
+};
+
+/* ══ 描画 ══════════════════════════════════════════════════ */
+function renderChips(){
+  const pool = CHIPS[S.mode] || [];
+  const picked = pool.slice();
+  for (let i = picked.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [picked[i], picked[j]] = [picked[j], picked[i]];
+  }
+  const show = picked.slice(0, S.mode === 'chat' ? 5 : 4);
+  $('#chips').innerHTML =
+    show.map(t => `<button class="chip" type="button">${t}</button>`).join('') +
+    '<button class="chip reroll" type="button" aria-label="質問を入れ替える">↻ 入れ替え</button>';
+  $('#chips').querySelectorAll('.chip:not(.reroll)').forEach(b =>
+    b.addEventListener('click', () => { input.value = b.textContent; resize(); input.focus(); }));
+  $('#chips').querySelector('.reroll').addEventListener('click', renderChips);
+}
+
+function renderIntro(){
+  const c = COPY[S.mode];
+  $('#intro-tag').textContent = c.tag;
+  $('#intro-title').textContent = c.title;
+  $('#intro-lead').innerHTML = c.lead;
+  input.placeholder = c.ph;
+  renderChips();
+}
+
+function addMessage(kind, text){
+  intro.style.display = 'none';
+  const el = document.createElement('div');
+  el.className = `msg ${kind}`;
+  el.innerHTML = kind === 'me'
+    ? '<div class="body"><div class="bubble"></div></div>'
+    : `<img class="av" src="${AVATAR[kind]}" alt=""><div class="body"><div class="who">${NAME[kind]}</div><div class="bubble"></div></div>`;
+  el.querySelector('.bubble').textContent = text;
+  log.appendChild(el);
+  scroll();
+  return el.querySelector('.bubble');
+}
+
+function addRaw(html){
+  intro.style.display = 'none';
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  log.appendChild(el.firstElementChild);
+  scroll();
+}
+
+function scroll(instant){ requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: instant ? 'auto' : 'smooth' })); }
+
+/* 松村COOは改行を多用する文体なので、空行が続きすぎたら1行にまとめる */
+function tidy(t){ return t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'); }
+
+/* ══ タイプライター表示 ═══════════════════════════════════════
+   通信は塊で届くのでそのまま出すとカクつく。届いた文字をいったん
+   貯めて、一定のリズムで少しずつ表示する。遅れが溜まったときだけ
+   歩幅を広げて追いつく。                                        */
+function typewriter(bubble){
+  let target = '', shown = 0, done = false, resolveDone = null;
+  const timer = setInterval(() => {
+    if (shown < target.length) {
+      if (document.hidden) {
+        // 裏のタブではタイマーが間引かれて進まなくなるので、一気に表示する
+        shown = target.length;
+      } else {
+        const behind = target.length - shown;
+        const step = behind > 300 ? 24 : behind > 100 ? 8 : behind > 30 ? 4 : 2;
+        shown = Math.min(target.length, shown + (done ? Math.max(step, 10) : step));
+      }
+      bubble.textContent = target.slice(0, shown);
+      scroll(true);
+    } else if (done) {
+      clearInterval(timer);
+      bubble.textContent = target;
+      scroll();
+      if (resolveDone) resolveDone();
+    }
+  }, 20);
+  return {
+    update(t){ target = t; },
+    finish(t){ target = t; done = true; return new Promise(r => { resolveDone = r; }); },
+    cancel(){ clearInterval(timer); },
+  };
+}
+
+function resize(){
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+  sendBtn.disabled = S.busy || !input.value.trim();
+}
+
+/* ══ 送信 ══════════════════════════════════════════════════ */
+async function send(text){
+  if (S.busy) return;
+  addMessage('me', text);
+  S.history.push({ role:'user', content:text });
+  input.value = ''; resize();
+
+  if (HANDOFF.some(w => text.includes(w))) {
+    addRaw(CONTACTS);
+    S.history.pop();
+    return;
+  }
+
+  S.busy = true; sendBtn.disabled = true;
+
+  const bubble = addMessage('matsumura', '');
+  bubble.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  const wrap = bubble.closest('.msg');
+  let tw = null;
+
+  try {
+    let res;
+    if (DIRECT) {
+      if (!S.key) {
+        wrap.remove(); S.history.pop();
+        if (RELAY && window.showGate) window.showGate();
+        else addRaw(errorCard(400, { error:'no_api_key' }));
+        return;
+      }
+      res = await directRequest();
+    } else {
+      const headers = { 'content-type':'application/json' };
+      if (S.key) headers['x-user-api-key'] = S.key;
+      res = await fetch('/api/chat', {
+        method:'POST', headers,
+        body: JSON.stringify({ messages:S.history, speaker:S.who, mode:S.mode }),
+      });
+    }
+
+    if (!res.ok) {
+      const info = await res.json().catch(() => ({}));
+      wrap.remove();
+      if (RELAY && info.error === 'bad_code') {
+        // 合言葉が変更された等。保存を消して、もう一度ロック画面へ
+        S.key = ''; localStorage.removeItem('pocket_key');
+        if (window.showGate) window.showGate();
+      } else {
+        addRaw(errorCard(res.status, info));
+      }
+      S.history.pop();
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', full = '', tagged = false;
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream:true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        let ev; try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
+        if (ev.type !== 'content_block_delta' || ev.delta?.type !== 'text_delta') continue;
+
+        full += ev.delta.text;
+
+        if (!tagged) { tagged = true; }
+        if (tagged) {
+          if (!tw) { bubble.textContent = ''; tw = typewriter(bubble); }
+          tw.update(tidy(full));
+        }
+      }
+    }
+
+    const finalText = tidy(full).trim();
+    if (tw) await tw.finish(finalText);
+    else bubble.textContent = finalText;
+    S.history.push({ role:'assistant', content: finalText });
+
+  } catch (err) {
+    if (tw) tw.cancel();
+    wrap.remove();
+    addRaw(`<div class="error">通信に失敗しました。サーバが起動しているか確認してください。<br><code>${String(err)}</code></div>`);
+    S.history.pop();
+  } finally {
+    S.busy = false; resize();
+  }
+}
+
+function errorCard(status, info){
+  if (info.error === 'no_api_key')
+    return RELAY
+      ? '<div class="error">合言葉が設定されていません。右上の歯車から入力してください。</div>'
+      : '<div class="error">APIキーが設定されていません。右上の歯車から入力してください。</div>';
+  if (info.error === 'bad_code')
+    return '<div class="error">合言葉が違うようです。右上の歯車から入れ直してください。</div>';
+  if (info.error === 'no_api_key_on_server')
+    return '<div class="error">サーバ側のAPIキーが未設定です。管理者に連絡してください。</div>';
+  if (status === 401)
+    return '<div class="error">APIキーが正しくないようです。右上の歯車から入れ直してください。</div>';
+  if (status === 429)
+    return '<div class="error">今アクセスが混み合っています。少し待ってからもう一度送ってください。</div>';
+  return `<div class="error">応答を受け取れませんでした（${status}）。<br><code>${(info.detail || info.error || '').toString().slice(0,200)}</code></div>`;
+}
+
+/* ══ 松村さんの言葉（松村メッセージ vol.1〜415 から要約） ═══════ */
+const KOTOBA = [
+  { cat:'当事者意識', items:[
+    { t:'圧倒的当事者意識', s:'vol.294', b:'松村COOが最も繰り返してきた言葉。「主導権を渡すな。他責になるな、自責で動け」を一言で言い換えたのがこれ。当事者意識は役職の話ではなく、誰もが当事者になれる。ポイントは「やっただけ」で終わらせないこと。言っただけ、頼んだだけ、渡しただけ、共有しただけでは浅い。ちゃんと進んでいるか、本当に伝わっているか、やり切れているか、結果に繋がっているか。確認（完了）まで見にいって、初めて当事者意識と呼べる。「聞いてない」「まだ指示されてない」「自分の担当じゃない」は、全部そこから出てくる言葉。待つな。握れ。動け。確認しろ。' },
+    { t:'待つな、取りに行け', s:'vol.407', b:'チャンスは配られるのを待っていても回ってこない。指示を待つ、機会を待つ、誰かが気づいてくれるのを待つ。その姿勢でいる限り、仕事は常に受け身になる。松村COOが求めるのは、自分から取りに行く姿勢。やりたい仕事があるなら手を挙げる。任されたいなら、任される前に動いて見せる。役職も同じで、役職がついてからリーダーシップを発揮するのではなく、発揮している人が役職を任される。順番が逆になっている人が多い。' },
+    { t:'主語に自分があるか', s:'vol.377', b:'「店が」「会社が」「上が」と話す人は、その時点で自分を主語から外している。同じ状況でも「自分はこうする」と言える人は、打てる手が残っている。主語を自分に戻した瞬間に、できることが見えてくるという考え方。愚痴が悪いのではなく、愚痴で終わると何も変わらないのが問題。批判や違和感を持ったなら、その次に「で、自分はどうするか」まで進める。それができる人が、現場を動かしていく。' },
+    { t:'私の店。私の会社。', s:'vol.220', b:'雇われている感覚で働くか、自分の店だと思って働くかで、見えるものが変わる。自分の店なら、汚れているところが気になる。お客様が減っていたら不安になる。仲間が困っていたら放っておけない。松村COOはこれを精神論ではなく、成長速度の話として語る。当事者として関わった経験の総量が、その人の実力になっていく。どうせ同じ時間を使うなら、自分のものとして関わったほうが、圧倒的に得。' },
+  ]},
+
+  { cat:'素直さと成長', items:[
+    { t:'素直さは最強の才能', s:'vol.403', b:'伸びる人の差は、能力でもセンスでも努力量でもなく、最後は素直さ。言われたことを受け取る、まずやってみる、変えてみる、直してみる。これができる人は伸びるのが速い。逆に「でも」「だって」「自分はこう思います」と、受け取る前に跳ね返す人は伸びにくい。ただし素直さは従順さとは違う。自分が未熟だと認めること、もっと良くなれると信じること、今の自分に固執せず変化を受け入れること。できる人にプライドがないわけではなく、変な意地より成長を取っているだけ。' },
+    { t:'逃げたいと思った時が、一番伸びる時', s:'vol.412', b:'振り返って「あの時、逃げなくて良かった」と思うことは何度もあるが、「あの時、逃げて良かった」と思ったことはほとんどない。逃げたくなる時というのは、自分の限界に挑戦している時。新しい役職、新しい仕事、新しい環境、新しい責任。だから怖いし、苦しいし、逃げたくなる。でもその感情が出ている時こそ、一番成長できる場所に立っている証拠。だから松村COOは「逃げたい」と思ったら、それをチャンスの合図だと捉えるようにしている。' },
+    { t:'できる方法を探せ', s:'vol.415', b:'仕事をしていると、できない理由はいくらでも出てくる。時間がない、人が足りない、経験がない、予算がない、今の状況では難しい。言い訳の材料を自然に探してしまうのが人間の摂理。でも、できない理由を並べても結果は何も変わらない。大事なのは、できる理由を探すこと、できる方法を考えること。今ある条件の中でどうすればできるのか。何を変えれば前に進むのか。誰に協力を求めればいいのか。どこを改善すれば結果に繋がるのか。' },
+    { t:'差は、才能じゃない', s:'vol.287', b:'同期でも、同じ時期に入ったアルバイトでも、数か月経つと差がつく。その差を才能で説明してしまうと、そこで思考が止まる。松村COOは、差の正体は姿勢と積み重ねだと言い切る。誰も見ていないところでやったかどうか、言われる前に動いたかどうか、指摘を受け取って直したかどうか。一つひとつは小さくても、それが毎日積み上がる。だから今からでも差は縮められるし、逆に油断すれば簡単に開く。' },
+    { t:'伸びしろを楽しめ', s:'vol.396', b:'できないことが見つかった時、落ち込むか、伸びしろが見つかったと捉えるか。同じ事実でも、受け取り方で次の行動が変わる。松村COOは「伸びしろしかない」という言い方をよく使う。今できないことは、これから伸びる余白でしかない。できない自分を責める時間より、できるようになるための一手に時間を使ったほうがいい。' },
+  ]},
+
+  { cat:'スピードと報連相', items:[
+    { t:'いい報告より、早い報告', s:'vol.404', b:'報告は綺麗に整ってから出すものではない。完璧にまとめてから、確定してから、ちゃんと整理してから——そうやって遅れるくらいなら、まず早く伝えたほうがいい。早ければズレを小さいうちに直せるし、手を打てるし、相談できるし、方向転換もできる。遅いと選択肢が減り、手戻りが増え、周りの負担も大きくなる。一番よくないのは、いい報告をしようとして遅くなること、悪い報告を避けて後回しにすること。悪い報告ほど早く、ズレている時ほど早く、迷っている時ほど早く。' },
+    { t:'70点で動かせ。30点で出すな', s:'vol.358', b:'完璧を待って動けないのも、雑なものをそのまま出すのも、どちらも仕事にならない。松村COOの基準は70点。人に見せて意見をもらえる状態まで作ったら、そこから先は一人で抱えずに動かす。30点はまだ相手の時間を奪うだけなので出してはいけない。この線引きを持っておくと、スピードと品質のどちらも落とさずに済む。' },
+    { t:'「あの件どうなった？」と言われたら負け', s:'vol.296', b:'上司や店長から進捗を聞かれた時点で、報告のタイミングとしては遅い。相手が気にしているということは、その時間だけ相手に心配や管理のコストを払わせているということ。松村COOはこれを「負け」と表現する。逆に、聞かれる前に「今こうなってます」「ここで迷ってます」と一言入れておくだけで、相手は動きやすくなるし、信用も積み上がる。報連相はやり過ぎくらいでちょうどいい。' },
+    { t:'後回しの利息', s:'vol.371', b:'今日やれば5分で終わることを後回しにすると、翌日には15分かかる。思い出す時間、状況が変わった分の確認、他人への影響。後回しには利息がつく、という考え方。しかも利息は複利で増えていく。やりたくない仕事ほど先に片付けたほうが、結果的にいちばん楽になる。' },
+    { t:'仕事は"記憶"より"記録"', s:'vol.405', b:'覚えておきます、は一番あてにならない。人は必ず忘れるという前提に立って、その場で書く。書いたものを見返す仕組みまで作って、初めて記録として機能する。松村COOはこれを能力の話ではなく仕組みの話として語る。記憶力に自信がある人ほど抜けるので、記録する習慣を持っている人のほうが最終的に信用される。' },
+  ]},
+
+  { cat:'徹底と継続', items:[
+    { t:'徹底！徹底！徹底！', s:'vol.332', b:'結果を出す人間と出せない人間の差は、最後は徹底性の差。徹底とは、結果に繋がるまでやり切ること。決めたならやる、言ったならやる、始めたならやる、形になるまでやる、当たり前になるまでやる。「まぁこのへんで」「一旦これで」「たぶん大丈夫」——こうなった瞬間に徹底性は消え、同時に結果への執着も消える。本当に徹底できる人間はしつこい。確認する、声をかける、追う、修正する、何回でも言う。なぜそこまでやるかというと、結果に執着しているから。' },
+    { t:'見られてない時に差が出る', s:'vol.309', b:'上司がいる時、お客様が見ている時に頑張るのは、ある意味で普通のこと（それすらできない人は論外だが）。本当の差は、見られていない時に出る。誰も見ていない時に掃除するか、誰も言わなくても整えるか、誰も気づかないところまでやるか。見られている時だけやる人は評価を取りにいっている人で、見られていなくてもやる人は基準で動いている人。バックヤード、トイレ、準備、片付け、段取り、細かい確認。誰にも褒められないところをどうやるかで決まる。' },
+    { t:'最初から最後まで、人生はちりつも', s:'vol.400', b:'売上も、信頼も、人間関係も、スピードも、空気も、文化も、成長も、全部が日々の小さな積み重ねでできている。いきなり売上が上がることはなく、日々の接客・声かけ・提案・気遣いが数字になる。信頼も一回では作れず、挨拶・返事・連絡・気にかけること・約束を守ることの積み重ねでできる。そして崩れる時も同じ。一回の雑、一回の妥協、一回の後回し、一回の見て見ぬふり。その一回は小さく見えても、やはり積み上がっていく。' },
+    { t:'"まぁいいか"の怖さ', s:'vol.361', b:'基準が下がる瞬間は、いつも「まぁいいか」から始まる。今日だけ、この一回だけ、誰も見ていないし。その一回は本当に小さいが、一度許すと二回目のハードルが下がる。気づいた時には、それが自分の当たり前になっている。逆に言えば、基準を守り続けることも同じ仕組みで積み上がる。どちらに転ぶかは、最初の一回をどう扱うかで決まる。' },
+    { t:'小さな約束を軽く扱わない', s:'vol.406', b:'「あとで送ります」「明日やっておきます」「確認しておきます」。こうした小さな約束をどれだけ守れるかで、信用は決まる。大きな約束は誰でも意識するが、小さな約束ほど流されやすい。松村COOは、信用とはこの小さな約束の積み重ねでしかないと言う。守れないなら安請け合いしない。言ったなら必ずやる。それだけで、任される仕事の大きさが変わってくる。' },
+  ]},
+
+  { cat:'人とチーム', items:[
+    { t:'結局、人は人で辞めるし、人で残る', s:'vol.387', b:'給料も条件も環境も制度も全部大事。でも最後に一番大きいのは、やっぱり人。「この人と働きたい」「この人がいるから頑張れる」「この人が声をかけてくれるから救われる」。人が残る理由は結局そこにある。逆に、どれだけ条件が良くても、人間関係で心が削られたらしんどいし、誰とも心で繋がれていなければ長くは続かない。だから組織づくりは制度づくりだけではなく、人間関係づくり・空気づくり・信頼づくりが要になる。自分がどんな言葉をかけ、どんな空気を作るか。それが組織を作っている。' },
+    { t:'リーダーシップは役職じゃない', s:'vol.410', b:'リーダーシップと聞くと役職者のことだと思われがちだが、実際は誰もが発揮できるもの。困っている仲間に声をかける、気づいたゴミを拾う、「私がやります」と手を挙げる、後輩に教える、お客様を笑顔にする、現場の空気を明るくする。これは全部リーダーシップ。逆に、役職があっても受け身・指示待ち・責任転嫁・空気を悪くするのであれば、リーダーシップがあるとは言えない。リーダーシップとは人を前向きにする力であり、人に良い影響を与える力。役職がついてから発揮するのではなく、発揮している人が役職を任される。' },
+    { t:'任せた瞬間からが育成', s:'vol.346', b:'仕事を渡して終わりではなく、渡してからが育成の本番。任せた以上は口を出しすぎないが、放置もしない。詰まっていないか、方向がズレていないかを見て、必要なところだけ手を入れる。松村COOは育成を「我慢比べ」とも表現する。自分でやったほうが速いのを我慢して、相手ができるようになるまで待つ。その我慢の総量が、そのまま組織の強さになる。' },
+    { t:'元気は最大の貢献', s:'vol.389', b:'スキルがまだなくても、経験が浅くても、誰でも今日からできる貢献がある。それが元気でいること。挨拶の声、返事の速さ、表情。それだけで現場の空気は変わるし、周りの動きも軽くなる。松村COOは「上機嫌も実力」「声の大きさは正義」という言い方もする。しんどい時ほど、そこを保てる人が信頼される。' },
+    { t:'"すみません"より"ありがとう"', s:'vol.267', b:'何かしてもらった時、つい「すみません」と言ってしまう。でも同じ場面で「ありがとう」と言えると、相手の受け取り方がまったく変わる。謝罪は相手に気を遣わせるが、感謝は相手を肯定する。小さな言葉の選び方だが、これを続けている人の周りには自然と人が集まる。ありがとうを溢れさせよう、というのが松村COOの一貫した姿勢。' },
+  ]},
+
+  { cat:'現場とお客様', items:[
+    { t:'現場は舞台。幕が上がったら、演じきれ', s:'vol.71', b:'店に立った瞬間から、そこは舞台。裏で何があっても、体調が優れなくても、お客様の前に出た以上はプロとして演じきる。これは嘘をつけという意味ではなく、お客様には自分の事情は関係ないという当たり前の話。そのうえで、演じきれる人は自分の感情を自分で扱えている人でもある。切り替える力は、そのまま実力になる。' },
+    { t:'クレンリネスをなめるな', s:'vol.283', b:'飲食店にとって清潔さは、サービスの一部ではなく前提。汚れた店では、どれだけ料理が美味しくても評価は戻らない。松村COOは「掃除の精度が、仕事の精度を決める」とも言う。見えないところまで手が届いているかは、その人の仕事全体の粗さと必ず一致する。だから掃除は雑務ではなく、基準を測るものさしとして扱われている。' },
+    { t:'最初と最後が、リピートを決める', s:'vol.159', b:'人の印象は、入口と出口で決まる。入店した瞬間の挨拶と、帰り際のお見送り。この二つが、料理や価格以上に「また来たい」を左右する。途中がどれだけ丁寧でも、最後が雑なら台無しになるし、逆に最後の一言で挽回できることもある。だから、いちばん忙しい時間帯に手を抜きがちなこの二つを、意識して守る。' },
+    { t:'チャンスは現場に落ちている', s:'vol.304', b:'改善のヒントも、評価されるきっかけも、会議室ではなく現場に落ちている。お客様の表情、テーブルの残り方、仲間が困っている場面。気づいて拾える人にはチャンスが見えるし、通り過ぎる人には何も見えない。同じ現場に立っていても、拾える量が違う。だから松村COOは「仕事は気づきのゲーム」という言い方もする。' },
+    { t:'見えている商品は、ただの入口', s:'vol.355', b:'お客様が買っているのは料理そのものだけではない。店の空気、スタッフの表情、待ち時間の心地よさ、また来たいと思える体験。メニューは入口にすぎず、その先の全部が価値になっている。だから「料理は自分の担当じゃない」という区切り方には意味がない。全員が体験を作っている。' },
+  ]},
+
+  { cat:'目指している場所', items:[
+    { t:'外食王に、俺はなる', s:'vol.237', b:'「外食王に、俺はなる！」——松村COOが本気で掲げている目標。ただし規模の話だけではない。目指しているのは、人を育て、店を強くし、チームを誇れる会社にすること。外から見て凄い会社であることはもちろん、中にいる人間が誇れる会社であること。「うまプロの社員は凄いよね」「どてっぱんで働いてた人は一味違うよね」——そう言われる組織を本気で作ろうとしている。外食は人が全て、ピープルビジネス。人を雑に扱う会社は長く続かない。だからスキルよりも心、技術よりも姿勢を育てる。そして「これは俺一人の夢じゃない。一緒にやる仲間がいて、初めて意味がある夢」だと言う。' },
+    { t:'本気で日本一のチームをつくりたい', s:'vol.200', b:'日本一という言葉を、売上や店舗数だけの意味では使っていない。現場で汗をかいている人、店を守っている人、支えてくれている人。その全員で取りにいくものとして語られている。だから一人のスーパースターに依存する組織ではなく、6割の基準が高い組織を目指す。組織の強さは、上位2割ではなく真ん中の6割で決まる、という考え方が背景にある。' },
+    { t:'うまプロにはチャンスしかない', s:'vol.318', b:'成長途中の会社なので、整っていないことも多い。でもそれは裏返せば、手を挙げた人に任される余白が大きいということ。大きな会社では順番待ちになるポジションや経験が、ここでは早く回ってくる。「ベンチャーであるという自覚があるか」という問いかけとセットで語られることが多く、待っている人ではなく取りにいく人にとっては、圧倒的に有利な環境だという話。' },
+  ]},
+];
+
+
+function renderKotoba(){
+  let k = document.getElementById('kotoba');
+  if (!k) {
+    k = document.createElement('div');
+    k.id = 'kotoba'; k.className = 'kotoba';
+    log.appendChild(k);
+  }
+  const total = KOTOBA.reduce((n, s) => n + s.items.length, 0);
+  k.innerHTML =
+    `<div class="khead"><h1>松村さんの言葉</h1><p>毎朝の松村メッセージ vol.1〜415 から ${total} の教え</p></div>` +
+    KOTOBA.map(sec =>
+      `<section><h2>${sec.cat}</h2>` +
+      sec.items.map(it =>
+        `<details class="kcard"><summary>${it.t}</summary><p>${it.b}</p><span class="ksrc">${it.s}</span></details>`
+      ).join('') +
+      '</section>'
+    ).join('');
+}
+
+/* ══ 操作 ══════════════════════════════════════════════════ */
+function goHome(){
+  if (S.busy) return;              // 返信の受信中は戻れない（送信が壊れるため）
+  S.mode = 'chat';
+  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-selected', String(x.dataset.mode === 'chat')));
+  S.history = [];
+  log.querySelectorAll('.msg, .handoff, .error').forEach(n => n.remove());
+  const k = document.getElementById('kotoba'); if (k) k.remove();
+  $('#form').style.display = '';
+  intro.style.display = '';
+  renderIntro();
+  window.scrollTo({ top: 0 });
+  document.querySelectorAll('video.idle').forEach(v => v.play().catch(() => {}));
+}
+$('#btn-home').addEventListener('click', goHome);
+$('#btn-home2').addEventListener('click', goHome);
+
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => {
+  S.mode = b.dataset.mode;
+  document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  S.history = [];
+  log.querySelectorAll('.msg, .handoff, .error').forEach(n => n.remove());
+  const k = document.getElementById('kotoba'); if (k) k.remove();
+  if (S.mode === 'kotoba') {
+    intro.style.display = 'none';
+    $('#form').style.display = 'none';
+    renderKotoba();
+    window.scrollTo({ top: 0 });
+  } else {
+    $('#form').style.display = '';
+    intro.style.display = '';
+    renderIntro();
+  }
+}));
+
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const t = input.value.trim();
+  if (t) send(t);
+});
+
+input.addEventListener('input', resize);
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#form').requestSubmit(); }
+});
+
+const dlg = $('#dlg');
+if (DIRECT && RELAY) {
+  // 中継サーバ版: 合言葉は初回のロック画面だけで入れる。設定（歯車）は出さない
+  $('#btn-settings').style.display = 'none';
+  const gate = $('#gate');
+  const showGate = () => {
+    gate.hidden = false;
+    $('#gate-err').hidden = true;
+    setTimeout(() => $('#gate-code').focus(), 60);
+  };
+  window.showGate = showGate;
+  if (!S.key) showGate();
+
+  $('#gate-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = $('#gate-code').value.trim();
+    if (!code) return;
+    const btn = $('#gate-go');
+    btn.disabled = true; btn.textContent = '確認中…';
+    try {
+      const r = await fetch(RELAY + '/check', { method:'POST', headers:{ 'x-access-code': code } });
+      if (r.ok) {
+        S.key = code;
+        localStorage.setItem('pocket_key', code);  // この端末に保存。次回からは聞かれない
+        gate.hidden = true;
+      } else {
+        $('#gate-err').textContent = '合言葉が違うようです。もう一度確かめてください。';
+        $('#gate-err').hidden = false;
+      }
+    } catch {
+      $('#gate-err').textContent = '通信できませんでした。電波の良いところでもう一度試してください。';
+      $('#gate-err').hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = 'はじめる';
+    }
+  });
+}
+$('#btn-settings').addEventListener('click', () => { $('#key').value = S.key; dlg.showModal(); checkHealth(); });
+$('#dlg-close').addEventListener('click', () => dlg.close());
+$('#dlg-save').addEventListener('click', () => {
+  S.key = $('#key').value.trim();
+  if (S.key) localStorage.setItem('pocket_key', S.key); else localStorage.removeItem('pocket_key');
+  dlg.close();
+});
+
+async function checkHealth(){
+  const dot = $('#dot'), txt = $('#status-text');
+  if (DIRECT) {
+    const ready = Boolean(S.key);
+    dot.className = 'dot ' + (ready ? 'ok' : 'ng');
+    txt.textContent = RELAY
+      ? (ready ? '接続OK' : '合言葉が未設定')
+      : (ready ? '接続OK — claude-opus-5（このブラウザのキー）' : 'APIキー未設定');
+    return;
+  }
+  try {
+    const h = await (await fetch('/healthz')).json();
+    const ready = h.server_key || Boolean(S.key);
+    dot.className = 'dot ' + (ready ? 'ok' : 'ng');
+    txt.textContent = ready
+      ? `接続OK — ${h.model}（${h.server_key ? 'サーバのキー' : 'このブラウザのキー'}）`
+      : `${h.model} — APIキー未設定`;
+  } catch {
+    dot.className = 'dot ng';
+    txt.textContent = 'サーバに接続できません';
+  }
+}
+
+/* 「視差効果を減らす」設定の人には動かさない（最初のコマで止める） */
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('video.idle').forEach(v => { v.autoplay = false; v.pause(); });
+}
+/* 動画が読めない場合はポスター画像で静止表示のまま（何もしなくてよい） */
+
+renderIntro();
+requestAnimationFrame(resize);
+</script>
+</body>
+</html>

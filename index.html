@@ -645,34 +645,60 @@ function scroll(instant){ requestAnimationFrame(() => window.scrollTo({ top: doc
 function tidy(t){ return t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'); }
 
 /* ══ タイプライター表示 ═══════════════════════════════════════
-   通信は塊で届くのでそのまま出すとカクつく。届いた文字をいったん
-   貯めて、一定のリズムで少しずつ表示する。遅れが溜まったときだけ
-   歩幅を広げて追いつく。                                        */
+   通信は塊で届くので、そのまま出すとカクつく。届いた文字を貯めて
+   少しずつ流す。なめらかに見せるための要点は3つ。
+     1) setInterval ではなく requestAnimationFrame で画面の描画に同期させる
+     2) 歩幅を段階的に変えず、毎秒の文字数を遅れ具合から連続的に決める
+        （端数を持ち越すので、1文字ずつ滑らかに進む）
+     3) スクロールは毎フレーム呼ばない。最下部にいる時だけ間引いて動かす
+        （毎フレーム呼ぶと画面が細かく揺れて、これが一番カクついて見える） */
 function typewriter(bubble){
   let target = '', shown = 0, done = false, resolveDone = null;
-  const timer = setInterval(() => {
-    if (shown < target.length) {
-      if (document.hidden) {
-        // 裏のタブではタイマーが間引かれて進まなくなるので、一気に表示する
-        shown = target.length;
-      } else {
-        const behind = target.length - shown;
-        const step = behind > 300 ? 48 : behind > 100 ? 18 : behind > 30 ? 9 : 4;
-        shown = Math.min(target.length, shown + (done ? Math.max(step, 20) : step));
+  let raf = 0, last = 0, carry = 0, lastScroll = 0;
+
+  /* 画面がほぼ最下部にいるか。上に戻して読んでいる時は勝手に引っぱらない */
+  const atBottom = () =>
+    (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160;
+
+  const tick = (now) => {
+    raf = requestAnimationFrame(tick);
+    if (!last) last = now;
+    const dt = Math.min((now - last) / 1000, 0.1);  // タブ復帰時の飛びを抑える
+    last = now;
+
+    if (document.hidden) {
+      shown = target.length;                        // 裏のタブでは一気に表示
+    } else if (shown < target.length) {
+      const behind = target.length - shown;
+      // 遅れているほど速く。段差を作らず連続的に上げる
+      const cps = Math.min(70 + behind * 6, done ? 900 : 460);
+      carry += cps * dt;
+      const step = Math.floor(carry);
+      if (step > 0) { carry -= step; shown = Math.min(target.length, shown + step); }
+    }
+
+    const txt = target.slice(0, shown);
+    if (bubble.textContent !== txt) {
+      bubble.textContent = txt;
+      if (now - lastScroll > 150 && atBottom()) {
+        lastScroll = now;
+        window.scrollTo({ top: document.body.scrollHeight });
       }
-      bubble.textContent = target.slice(0, shown);
-      scroll(true);
-    } else if (done) {
-      clearInterval(timer);
+    }
+
+    if (done && shown >= target.length) {
+      cancelAnimationFrame(raf);
       bubble.textContent = target;
-      scroll();
+      if (atBottom()) window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       if (resolveDone) resolveDone();
     }
-  }, 16);
+  };
+  raf = requestAnimationFrame(tick);
+
   return {
     update(t){ target = t; },
     finish(t){ target = t; done = true; return new Promise(r => { resolveDone = r; }); },
-    cancel(){ clearInterval(timer); },
+    cancel(){ cancelAnimationFrame(raf); },
   };
 }
 

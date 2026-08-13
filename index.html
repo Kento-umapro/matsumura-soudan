@@ -125,18 +125,6 @@ header{position:sticky; top:0; z-index:20; background:var(--surface); border-bot
   box-shadow:0 2px 6px rgba(140,109,31,.16);
   border-bottom-width:1.5px;   /* 他のタブの下線指定を打ち消す */
 }
-/* 吹き出しのしっぽ。枠線ぶんをずらして二重に見えないようにする */
-.mode[data-mode="kotoba"]::before,
-.mode[data-mode="kotoba"]::after{
-  content:''; position:absolute; left:22px; width:0; height:0;
-  border-left:7px solid transparent; border-right:7px solid transparent;
-}
-.mode[data-mode="kotoba"]::before{
-  bottom:-9px; border-top:9px solid #D9B84A;
-}
-.mode[data-mode="kotoba"]::after{
-  bottom:-6.5px; border-top:9px solid #FDF3D6;
-}
 .mode[data-mode="kotoba"] span{
   background:linear-gradient(120deg, #A67C00 0%, #E6B422 35%, #FFE28A 52%, #D4AF37 70%, #8C6D1F 100%);
   -webkit-background-clip:text; background-clip:text;
@@ -149,7 +137,6 @@ header{position:sticky; top:0; z-index:20; background:var(--surface); border-bot
   border-color:#B8912A;
   background:linear-gradient(180deg, #FDF3D6 0%, #F7E7B8 100%);
 }
-.mode[data-mode="kotoba"][aria-selected="true"]::after{ border-top-color:#F7E7B8 }
 
 /* ══ 会話 ══════════════════════════════════════════════════ */
 main{flex:1; padding:22px 18px 10px; display:flex; flex-direction:column; gap:18px}

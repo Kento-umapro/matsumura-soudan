@@ -472,7 +472,7 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
   </div>
 </div>
 
-<script src="prompts.js?v=2e7f24894e"></script>
+<script src="config.js?v=627fd093fe"></script>
 <script>
 /* ══ 状態 ══════════════════════════════════════════════════ */
 const S = {
@@ -490,13 +490,18 @@ const AVATAR = { matsumura: 'img/matsumura-256.jpg' };
 const NAME = { matsumura: '松村COO' };
 
 /* ══ サーバ不要モード（GitHub Pages用） ══════════════════════
-   ビルド時に prompts.js（window.PROMPTS）が同梱されている場合、
-   ローカルサーバを経由せず、ブラウザから直接 Anthropic API を呼ぶ。
-   APIキーは右上の歯車から入力（このブラウザのみに保存）。       */
-const DIRECT = typeof window.PROMPTS === 'object' && window.PROMPTS !== null;
-/* 中継サーバ（Cloudflare Worker）が設定されていれば、APIキーの代わりに
-   合言葉（x-access-code）を送る。キーは中継サーバだけが持つ。 */
+   中継サーバ（Cloudflare Worker）が設定されていれば、そこへ送る。
+   APIキーは中継サーバだけが持ち、ページは合言葉（x-access-code）だけを送る。
+
+   **人格MD（松村COOの文体・思想）はページに同梱しない。**
+   公開リポジトリに置くと誰でも丸ごと読めてしまうため、中継サーバ側に置き、
+   ページは「どのタブからの相談か（mode）」だけを送る。
+   中継サーバがそれを見て、対応する人格を組み立てる。
+
+   window.PROMPTS があるのはローカル確認のときだけ（build-pages.mjs は出力しない）。 */
 const RELAY = (typeof window.RELAY_URL === 'string' && window.RELAY_URL) || '';
+const HAS_LOCAL_PROMPTS = typeof window.PROMPTS === 'object' && window.PROMPTS !== null;
+const DIRECT = RELAY !== '' || HAS_LOCAL_PROMPTS;
 
 function buildSystemDirect(){
   const p = window.PROMPTS;
@@ -514,22 +519,26 @@ function directRequest(){
     headers['anthropic-version'] = '2023-06-01';
     headers['anthropic-dangerous-direct-browser-access'] = 'true';
   }
+  const payload = {
+    model:'claude-opus-5',
+    max_tokens:4000,
+    stream:true,
+    output_config:{ effort:'low' },
+    mode:S.mode,   // どのタブからの相談か（中継サーバが人格を選ぶのと、統計に使う）
+    kind:kindOf(S.history.find(m => m.role === 'user')?.content || ''),   // 用意した質問か自由記述か
+    messages:S.history.slice(-20).map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: String(m.content || '').slice(0, 4000),
+    })),
+  };
+  // 人格は中継サーバが持っている。手元にMDがある時（ローカル確認）だけ自分で組む。
+  if (HAS_LOCAL_PROMPTS) {
+    payload.system = [{ type:'text', text:buildSystemDirect(), cache_control:{ type:'ephemeral' } }];
+  }
   return fetch(RELAY || 'https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers,
-    body: JSON.stringify({
-      model:'claude-opus-5',
-      max_tokens:4000,
-      stream:true,
-      output_config:{ effort:'low' },
-      mode:S.mode,   // どのタブからの相談か（中継サーバが統計用に見るだけで、AIには渡らない）
-      kind:kindOf(S.history.find(m => m.role === 'user')?.content || ''),   // 同上（用意した質問か自由記述か）
-      system:[{ type:'text', text:buildSystemDirect(), cache_control:{ type:'ephemeral' } }],
-      messages:S.history.slice(-20).map(m => ({
-        role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: String(m.content || '').slice(0, 4000),
-      })),
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -731,7 +740,7 @@ function typewriter(bubble, { steady = false } = {}){
   const BASE = 30, ACCEL = 1.2, MAX = 95, MAX_END = 220;
 
   let target = '', shown = 0, done = false, resolveDone = null;
-  let raf = 0, last = 0, carry = 0, lastScroll = 0;
+  let raf = 0, last = 0, carry = 0, lastScroll = 0, guard = 0;
 
   /* 画面がほぼ最下部にいるか。上に戻して読んでいる時は勝手に引っぱらない */
   const atBottom = () =>
@@ -763,19 +772,40 @@ function typewriter(bubble, { steady = false } = {}){
       }
     }
 
-    if (done && shown >= target.length) {
-      cancelAnimationFrame(raf);
-      bubble.textContent = target;
-      if (atBottom()) window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      if (resolveDone) resolveDone();
-    }
+    if (done && shown >= target.length) finishNow();
   };
+
+  const finishNow = () => {
+    cancelAnimationFrame(raf);
+    clearInterval(guard);
+    bubble.textContent = target;
+    if (!document.hidden && atBottom()) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+    if (resolveDone) { const r = resolveDone; resolveDone = null; r(); }
+  };
+
+  /* 裏のタブや画面を消している間、requestAnimationFrame は動かない。
+     そのままだと文字が出ないまま「送信中」で固まってしまうので、
+     止まらないタイマーで見張り、隠れている間は一気に表示して先へ進める。 */
+  guard = setInterval(() => {
+    if (!document.hidden) return;
+    shown = target.length;
+    bubble.textContent = target;
+    if (done) finishNow();
+  }, 300);
+
   raf = requestAnimationFrame(tick);
 
   return {
     update(t){ target = t; },
-    finish(t){ target = t; done = true; return new Promise(r => { resolveDone = r; }); },
-    cancel(){ cancelAnimationFrame(raf); },
+    finish(t){
+      target = t; done = true;
+      // すでに出し切っている場合や、隠れている場合はここで終わらせる
+      if (shown >= target.length || document.hidden) { finishNow(); return Promise.resolve(); }
+      return new Promise(r => { resolveDone = r; });
+    },
+    cancel(){ cancelAnimationFrame(raf); clearInterval(guard); },
   };
 }
 

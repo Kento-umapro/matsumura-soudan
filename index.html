@@ -115,14 +115,41 @@ header{position:sticky; top:0; z-index:20; background:var(--surface); border-bot
   border-bottom:2.5px solid transparent; margin-bottom:-1px;
 }
 .mode[aria-selected="true"]{color:var(--brand); border-bottom-color:var(--brand)}
-/* 松村の言葉: AI相談とは別要素なので右に離し、金色のグラデーション文字に */
+/* 松村の言葉: AI相談とは別ものなので右に離す。
+   金文字だけだと地に沈んで見落とされるため、吹き出しの形にして拾わせる。 */
 .mode[data-mode="kotoba"]{
-  margin-left:auto;
+  margin-left:auto; position:relative;
+  align-self:center; padding:7px 14px 8px; margin-bottom:6px;
+  border:1.5px solid #D9B84A; border-radius:12px;
+  background:linear-gradient(180deg, #FFFCF0 0%, #FDF3D6 100%);
+  box-shadow:0 2px 6px rgba(140,109,31,.16);
+  border-bottom-width:1.5px;   /* 他のタブの下線指定を打ち消す */
+}
+/* 吹き出しのしっぽ。枠線ぶんをずらして二重に見えないようにする */
+.mode[data-mode="kotoba"]::before,
+.mode[data-mode="kotoba"]::after{
+  content:''; position:absolute; left:22px; width:0; height:0;
+  border-left:7px solid transparent; border-right:7px solid transparent;
+}
+.mode[data-mode="kotoba"]::before{
+  bottom:-9px; border-top:9px solid #D9B84A;
+}
+.mode[data-mode="kotoba"]::after{
+  bottom:-6.5px; border-top:9px solid #FDF3D6;
+}
+.mode[data-mode="kotoba"] span{
   background:linear-gradient(120deg, #A67C00 0%, #E6B422 35%, #FFE28A 52%, #D4AF37 70%, #8C6D1F 100%);
   -webkit-background-clip:text; background-clip:text;
   color:transparent; -webkit-text-fill-color:transparent;
 }
-.mode[data-mode="kotoba"][aria-selected="true"]{border-bottom-color:#D4AF37}
+.mode[data-mode="kotoba"]:hover{
+  box-shadow:0 3px 10px rgba(140,109,31,.26); transform:translateY(-1px);
+}
+.mode[data-mode="kotoba"][aria-selected="true"]{
+  border-color:#B8912A;
+  background:linear-gradient(180deg, #FDF3D6 0%, #F7E7B8 100%);
+}
+.mode[data-mode="kotoba"][aria-selected="true"]::after{ border-top-color:#F7E7B8 }
 
 /* ══ 会話 ══════════════════════════════════════════════════ */
 main{flex:1; padding:22px 18px 10px; display:flex; flex-direction:column; gap:18px}
@@ -179,6 +206,19 @@ main{flex:1; padding:22px 18px 10px; display:flex; flex-direction:column; gap:18
   padding:13px 6px; white-space:nowrap; overflow:visible; text-overflow:clip;
 }
 .chip.reroll:hover{background:var(--brand-wash); color:var(--brand-deep)}
+
+/* マウスで操作している時（PC）は、縦書きの細い帯だと狙いにくい。
+   横書きの普通のボタンにして、質問の下に置く。
+   指で操作する端末は横幅が惜しいので、右上の縦書きのままにする。 */
+@media (hover:hover) and (pointer:fine){
+  .chips{ padding:0 }
+  .chip.reroll{
+    position:static; writing-mode:horizontal-tb;
+    margin-top:9px; padding:10px 22px;
+    font-size:12.5px; letter-spacing:.06em;
+    border-style:solid;
+  }
+}
 
 /* ══ 松村の言葉 ═══════════════════════════════════════════ */
 .kotoba{padding:4px 0 20px}
@@ -392,7 +432,7 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
     <div class="modes" role="tablist">
       <button class="mode" role="tab" data-mode="chat" aria-selected="true">相談する</button>
       <button class="mode" role="tab" data-mode="praise" aria-selected="false">ほめてもらう</button>
-      <button class="mode" role="tab" data-mode="kotoba" aria-selected="false">松村の言葉</button>
+      <button class="mode" role="tab" data-mode="kotoba" aria-selected="false"><span>松村の言葉</span></button>
     </div>
   </header>
 

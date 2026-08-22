@@ -500,7 +500,8 @@ dialog::backdrop{background:rgba(40,10,8,.5)}
   </div>
 </div>
 
-<script src="config.js?v=627fd093fe"></script>
+<script src="config.js?v=9d66e2df0e"></script>
+<script src="canned.js?v=9d66e2df0e"></script>
 <script>
 /* ══ 状態 ══════════════════════════════════════════════════ */
 const S = {
@@ -746,7 +747,13 @@ function addRaw(html){
 function scroll(instant){ requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: instant ? 'auto' : 'smooth' })); }
 
 /* 松村COOは改行を多用する文体なので、空行が続きすぎたら1行にまとめる */
-function tidy(t){ return t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'); }
+/* 画面は文字をそのまま出すので、AIがうっかり **強調** を書くと
+   アスタリスクが見えてしまう。人格MDでも禁じているが、念のためここでも外す。 */
+function tidy(t){
+  return t.replace(/[ \t]+$/gm, '')
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/\n{3,}/g, '\n\n');
+}
 
 /* ══ タイプライター表示 ═══════════════════════════════════════
    通信は塊で届くので、そのまま出すとカクつく。届いた文字を貯めて

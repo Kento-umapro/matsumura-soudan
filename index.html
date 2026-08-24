@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>松村相談役 — うまプロ</title>
+
+<!-- ホーム画面に追加したときの見た目。
+     アイコンを指定しないと、iOSがページから文字（松）を勝手に作ってしまう。
+     iOS側で角丸に切り抜かれるので、余白なし・透過なしの正方形を渡す。 -->
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="img/icon-512.png">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<!-- ホーム画面に出る名前。指定しないと <title> が使われ「松村相談役ーうま…」と切れる -->
+<meta name="apple-mobile-web-app-title" content="松村相談役">
+<meta name="application-name" content="松村相談役">
+<meta name="theme-color" content="#D83020">
+
 <link rel="preload" as="image" href="img/matsumura-256.jpg">
 <style>
 /* ══ トークン ══════════════════════════════════════════════

@@ -911,6 +911,13 @@ async function send(text){
     }
     S.busy = true; sendBtn.disabled = true;
     const bubble = addMessage('matsumura', '');
+    // 手元に答えがあるからといって即座に書き出すと、読んでいないのに
+    // 返してきたように見えて冷たい。少しだけ考える間を置く。
+    // 毎回きっちり同じ長さだと機械的なので、わずかに幅を持たせる。
+    bubble.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+    await new Promise(r => setTimeout(r, 900 + Math.random() * 500));
+    if (!S.busy) return;              // 待っている間にタブを変えられた等
+    bubble.textContent = '';
     const tw = typewriter(bubble, { steady:true });
     await tw.finish(ready);
     S.history.push({ role:'assistant', content:ready });
